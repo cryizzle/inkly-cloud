@@ -48,12 +48,20 @@ export function isAuthenticated(event: RequestEvent) {
 	return isValidToken(readBearerToken(event)) || isValidToken(event.cookies.get(COOKIE_NAME));
 }
 
+function shouldUseSecureCookies() {
+	if (process.env.INKLY_COOKIE_SECURE) {
+		return process.env.INKLY_COOKIE_SECURE === 'true';
+	}
+
+	return process.env.ORIGIN?.startsWith('https://') ?? process.env.NODE_ENV === 'production';
+}
+
 export function setAuthCookie(cookies: Cookies, token: string) {
 	cookies.set(COOKIE_NAME, token, {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
-		secure: process.env.NODE_ENV === 'production',
+		secure: shouldUseSecureCookies(),
 		maxAge: 60 * 60 * 24 * 365
 	});
 }
