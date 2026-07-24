@@ -1,0 +1,21 @@
+{
+	"name": "ink.ly",
+	"short_name": "ink.ly",
+	"description": "A warm writing and reading tracker for manuscript progress, books, and rewards.",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#fbf4dc",
+	"theme_color": "#f7edcf",
+	"icons": [
+		{
+			"src": "/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "/icon-512.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		}
+	]
+}
