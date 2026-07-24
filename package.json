@@ -1,8 +1,8 @@
 {
-	"name": "inkly",
+	"name": "inkly-cloud",
 	"private": true,
 	"version": "0.0.1",
-	"description": "A local-first writing, reading, and reward tracker for manuscript work.",
+	"description": "Private server-backed writing, reading, and reward tracker.",
 	"author": "crystaltee",
 	"type": "module",
 	"main": "electron-dist/main.js",
@@ -16,6 +16,7 @@
 		"dev:desktop:electron": "npm run build:electron && INKLY_DEV_SERVER_URL=http://127.0.0.1:5173 electron .",
 		"build": "vite build",
 		"build:web": "vite build",
+		"start": "node build",
 		"build:desktop": "npm run build:web && npm run build:electron && HOME=$PWD/.electron-home npm_config_devdir=$PWD/.electron-gyp electron-builder --dir",
 		"dist:mac": "npm run build:web && npm run build:electron && HOME=$PWD/.electron-home npm_config_devdir=$PWD/.electron-gyp electron-builder --mac",
 		"preview": "vite preview",

@@ -16,7 +16,7 @@ const config = {
 	kit: {
 		adapter: adapter(),
 		csrf: {
-			trustedOrigins: ['*']
+			trustedOrigins: process.env.INKLY_TRUSTED_ORIGINS?.split(',').map((origin) => origin.trim()).filter(Boolean) ?? []
 		}
 	}
 };

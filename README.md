@@ -1,42 +1,73 @@
-# sv
+# inkly-cloud
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+Private server-backed version of ink.ly, the writing, reading, and reward tracker.
 
-## Creating a project
-
-If you're seeing this, you've probably already done this step. Congrats!
+## Local Development
 
 ```sh
-# create a new project
-npx sv create my-app
-```
-
-To recreate this project with the same configuration:
-
-```sh
-# recreate this project
-npx sv@0.13.0 create --template minimal --types ts --install npm inkly
-```
-
-## Developing
-
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
-
-```sh
+npm install
 npm run dev
-
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
 ```
 
-## Building
+By default, local development does not require an access token unless `INKLY_ACCESS_TOKEN` is set.
 
-To create a production version of your app:
+## Token Access
+
+When `INKLY_ACCESS_TOKEN` is configured, every non-public route is protected.
+
+Browser/PWA access:
+
+```text
+https://your-inkly-host.example/?token=your-token
+```
+
+The server stores the token in an HTTP-only cookie and removes it from the URL.
+
+API access:
 
 ```sh
-npm run build
+curl -H "Authorization: Bearer your-token" https://your-inkly-host.example/api/summary
 ```
 
-You can preview the production build with `npm run preview`.
+`X-Inkly-Token: your-token` is also accepted.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+## Docker
+
+Create an environment file:
+
+```sh
+cp .env.example .env
+```
+
+Set a private token in `.env`:
+
+```text
+INKLY_ACCESS_TOKEN=replace-with-a-long-random-token
+ORIGIN=https://your-inkly-host.example
+```
+
+Run the app:
+
+```sh
+docker compose up --build
+```
+
+The app listens on `http://localhost:3000` by default.
+
+SQLite data is stored in the Docker volume `inkly-cloud-data`, mounted at `/data` inside the container.
+
+## Runtime Environment
+
+Useful variables:
+
+```text
+PORT=3000
+ORIGIN=https://your-inkly-host.example
+INKLY_ACCESS_TOKEN=replace-with-a-long-random-token
+INKLY_DATA_DIR=/data
+INKLY_RESOURCES_DIR=/app/resources
+INKLY_TRUSTED_ORIGINS=
+INKLY_ALLOW_NO_TOKEN=
+```
+
+Seed CSVs are bundled in `resources/seed` and used only when the database is first initialized.

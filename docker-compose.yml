@@ -1,0 +1,27 @@
+services:
+  inkly-cloud:
+    build: .
+    image: inkly-cloud:local
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3000
+      ORIGIN: ${ORIGIN:-http://localhost:3000}
+      INKLY_ACCESS_TOKEN: ${INKLY_ACCESS_TOKEN:-}
+      INKLY_DATA_DIR: /data
+      INKLY_RESOURCES_DIR: /app/resources
+      INKLY_TRUSTED_ORIGINS: ${INKLY_TRUSTED_ORIGINS:-}
+    volumes:
+      - inkly-cloud-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/healthz').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  inkly-cloud-data:

@@ -1,0 +1,15 @@
+.git
+.svelte-kit
+build
+dist-electron
+electron-dist
+.electron-gyp
+.electron-home
+node_modules
+data
+
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
