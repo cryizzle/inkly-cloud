@@ -18,6 +18,14 @@
 	let data = $state(untrack(() => structuredClone(serverData)));
 	let editingId = $state<number | null>(null);
 	let period = $state<'month' | 'all'>('month');
+
+	$effect(() => {
+		const nextData = structuredClone(serverData);
+		if (navigator.onLine) {
+			data = nextData;
+			cachePageSnapshot('writing', nextData);
+		}
+	});
 	const nextSort = $derived(data.sort === 'desc' ? 'asc' : 'desc');
 
 	const filteredEntries = $derived.by(() => {

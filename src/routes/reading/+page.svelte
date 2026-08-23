@@ -23,6 +23,14 @@
 	let expandedId = $state<number | null>(null);
 	let showRead = $state(false);
 	let showCreateModal = $state(false);
+
+	$effect(() => {
+		const nextData = structuredClone(serverData);
+		if (navigator.onLine) {
+			data = nextData;
+			cachePageSnapshot('reading', nextData);
+		}
+	});
 	const nextSort = $derived(data.sort === 'desc' ? 'asc' : 'desc');
 
 	function sortDate(entry: ReadingStats['entries'][number]) {

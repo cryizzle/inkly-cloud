@@ -10,6 +10,14 @@
 	let data = $state(untrack(() => structuredClone(serverData)));
 	let period = $state<'month' | 'all'>('month');
 
+	$effect(() => {
+		const nextData = structuredClone(serverData);
+		if (navigator.onLine) {
+			data = nextData;
+			cachePageSnapshot('dashboard', nextData);
+		}
+	});
+
 	const filteredWritingEntries = $derived.by(() => {
 		if (period === 'all') {
 			return data.summary.writing.entries;

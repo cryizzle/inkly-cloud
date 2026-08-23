@@ -28,6 +28,14 @@
 	let showEarned = $state(false);
 	let showCreateModal = $state(false);
 
+	$effect(() => {
+		const nextData = structuredClone(serverData);
+		if (navigator.onLine) {
+			data = nextData;
+			cachePageSnapshot('rewards', nextData);
+		}
+	});
+
 	const activeMilestones = $derived(
 		data.milestones.filter((milestone) => milestone.isRepeatable || milestone.status !== 'earned')
 	);
