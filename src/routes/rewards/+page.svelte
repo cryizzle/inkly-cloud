@@ -1,11 +1,18 @@
 <script lang="ts">
+	import { onMount, untrack } from 'svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
+	import {
+		applyOperationToPageData,
+		cachePageSnapshot,
+		loadPageSnapshot,
+		type OfflineOperationEvent
+	} from '$lib/client/offline-sync';
 	import type { RewardCompletion, RewardMilestoneProgress } from '$lib/types';
 
 	const PAGE_SIZE = 10;
 
 	let {
-		data
+		data: serverData
 	}: {
 		data: {
 			milestones: RewardMilestoneProgress[];
@@ -15,6 +22,7 @@
 			completions: (RewardCompletion & { milestoneTitle: string; rewardEur: number | null })[];
 		};
 	} = $props();
+	let data = $state(untrack(() => structuredClone(serverData)));
 
 	let editingId = $state<number | null>(null);
 	let showEarned = $state(false);
@@ -59,6 +67,27 @@
 		{ value: 'books_finished', label: 'Books finished' },
 		{ value: 'novels_in_cycle', label: 'Novels in cycle' }
 	];
+
+	onMount(() => {
+		cachePageSnapshot('rewards', data);
+		loadPageSnapshot<typeof data>('rewards').then((snapshot) => {
+			if (snapshot && !navigator.onLine) {
+				data = snapshot;
+			}
+		});
+
+		const handleOperation = (event: Event) => {
+			const { operation } = (event as CustomEvent<OfflineOperationEvent>).detail;
+			const nextData = applyOperationToPageData('rewards', data, operation);
+			if (nextData !== data) {
+				data = nextData;
+				cachePageSnapshot('rewards', data);
+			}
+		};
+
+		window.addEventListener('inkly-offline-operation', handleOperation);
+		return () => window.removeEventListener('inkly-offline-operation', handleOperation);
+	});
 </script>
 
 <section class="stack">
@@ -107,7 +136,7 @@
 							<td>EUR {milestone.rewardEur}</td>
 							<td>
 								{#if milestone.kind === 'manual' && !milestone.isRepeatable}
-									<form method="POST" action="?/toggleManual">
+									<form method="POST" action="?/toggleManual" data-offline-mutation="reward.toggleManual">
 										<input type="hidden" name="id" value={milestone.id} />
 										<input type="hidden" name="completedAt" value={milestone.completedAt ?? ''} />
 										<input type="hidden" name="shouldComplete" value="true" />
@@ -124,7 +153,7 @@
 						{#if editingId === milestone.id}
 							<tr>
 								<td colspan="6" style="background: rgba(138, 90, 46, 0.05);">
-									<form id={`reward-update-${milestone.id}`} method="POST" action="?/update" class="stack">
+									<form id={`reward-update-${milestone.id}`} method="POST" action="?/update" class="stack" data-offline-mutation="reward.update">
 											<input type="hidden" name="id" value={milestone.id} />
 											<input type="hidden" name="kind" value={milestone.kind} />
 											<input type="hidden" name="metricType" value={milestone.metricType} />
@@ -134,7 +163,7 @@
 											<label><span class="eyebrow">Reward</span><input name="rewardEur" type="number" step="0.01" value={milestone.rewardEur} /></label>
 											<label><span class="eyebrow">Target</span><input name="targetValue" type="number" value={milestone.targetValue ?? ''} /></label>
 									</form>
-									<form id={`reward-delete-${milestone.id}`} method="POST" action="?/delete">
+									<form id={`reward-delete-${milestone.id}`} method="POST" action="?/delete" data-offline-mutation="reward.delete">
 										<input type="hidden" name="id" value={milestone.id} />
 									</form>
 									<div class="button-row" style="justify-content: flex-end; margin-top: 1rem;">
@@ -203,7 +232,7 @@
 							{#if editingId === milestone.id}
 								<tr>
 									<td colspan="5" style="background: rgba(138, 90, 46, 0.05);">
-										<form id={`reward-update-${milestone.id}`} method="POST" action="?/update" class="stack">
+										<form id={`reward-update-${milestone.id}`} method="POST" action="?/update" class="stack" data-offline-mutation="reward.update">
 											<input type="hidden" name="id" value={milestone.id} />
 											<input type="hidden" name="kind" value={milestone.kind} />
 											<input type="hidden" name="metricType" value={milestone.metricType} />
@@ -213,11 +242,11 @@
 											<label><span class="eyebrow">Reward</span><input name="rewardEur" type="number" step="0.01" value={milestone.rewardEur} /></label>
 											<label><span class="eyebrow">Target</span><input name="targetValue" type="number" value={milestone.targetValue ?? ''} /></label>
 										</form>
-										<form id={`reward-delete-${milestone.id}`} method="POST" action="?/delete">
+										<form id={`reward-delete-${milestone.id}`} method="POST" action="?/delete" data-offline-mutation="reward.delete">
 											<input type="hidden" name="id" value={milestone.id} />
 										</form>
 										{#if milestone.kind === 'manual'}
-											<form id={`reward-toggle-${milestone.id}`} method="POST" action="?/toggleManual">
+											<form id={`reward-toggle-${milestone.id}`} method="POST" action="?/toggleManual" data-offline-mutation="reward.toggleManual">
 												<input type="hidden" name="id" value={milestone.id} />
 												<input type="hidden" name="completedAt" value={milestone.completedAt ?? ''} />
 												<input type="hidden" name="shouldComplete" value={milestone.status === 'earned' ? 'false' : 'true'} />
@@ -285,7 +314,7 @@
 					<h2 class="display" style="margin: 0;">Add a milestone</h2>
 					<button class="button subtle" type="button" onclick={() => (showCreateModal = false)}>Close</button>
 				</div>
-				<form method="POST" action="?/create" class="stack">
+				<form method="POST" action="?/create" class="stack" data-offline-mutation="reward.create">
 					<div class="field-grid">
 						<label class="span-3"><span class="eyebrow">Category</span><input name="category" required /></label>
 						<label class="span-6"><span class="eyebrow">Title</span><input name="title" required /></label>

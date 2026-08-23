@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { onMount, untrack } from 'svelte';
 	import LineChart from '$lib/components/LineChart.svelte';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import ProgressCard from '$lib/components/ProgressCard.svelte';
+	import { cachePageSnapshot, loadPageSnapshot } from '$lib/client/offline-sync';
 	import type { DashboardSummary } from '$lib/types';
 
-	let { data }: { data: { summary: DashboardSummary } } = $props();
+	let { data: serverData }: { data: { summary: DashboardSummary } } = $props();
+	let data = $state(untrack(() => structuredClone(serverData)));
 	let period = $state<'month' | 'all'>('month');
 
 	const filteredWritingEntries = $derived.by(() => {
@@ -30,6 +33,15 @@
 	const writingDiffs = $derived(filteredWritingEntries.map((entry) => entry.diffAbs));
 	const xStartLabel = $derived(filteredWritingEntries.at(0)?.date ?? '');
 	const xEndLabel = $derived(filteredWritingEntries.at(-1)?.date ?? '');
+
+	onMount(() => {
+		cachePageSnapshot('dashboard', data);
+		loadPageSnapshot<typeof data>('dashboard').then((snapshot) => {
+			if (snapshot && !navigator.onLine) {
+				data = snapshot;
+			}
+		});
+	});
 </script>
 
 <section class="stack">

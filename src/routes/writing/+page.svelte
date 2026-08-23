@@ -1,13 +1,21 @@
 <script lang="ts">
+	import { onMount, untrack } from 'svelte';
 	import LineChart from '$lib/components/LineChart.svelte';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import ProgressCard from '$lib/components/ProgressCard.svelte';
+	import {
+		applyOperationToPageData,
+		cachePageSnapshot,
+		loadPageSnapshot,
+		type OfflineOperationEvent
+	} from '$lib/client/offline-sync';
 	import type { WritingStats } from '$lib/types';
 
 	const PAGE_SIZE = 10;
 
-	let { data }: { data: { stats: WritingStats; sort: 'asc' | 'desc'; page: number; today: string } } = $props();
+	let { data: serverData }: { data: { stats: WritingStats; sort: 'asc' | 'desc'; page: number; today: string } } = $props();
+	let data = $state(untrack(() => structuredClone(serverData)));
 	let editingId = $state<number | null>(null);
 	let period = $state<'month' | 'all'>('month');
 	const nextSort = $derived(data.sort === 'desc' ? 'asc' : 'desc');
@@ -45,6 +53,27 @@
 	const paginatedEntries = $derived(
 		sortedEntries.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE)
 	);
+
+	onMount(() => {
+		cachePageSnapshot('writing', data);
+		loadPageSnapshot<typeof data>('writing').then((snapshot) => {
+			if (snapshot && !navigator.onLine) {
+				data = snapshot;
+			}
+		});
+
+		const handleOperation = (event: Event) => {
+			const { operation } = (event as CustomEvent<OfflineOperationEvent>).detail;
+			const nextData = applyOperationToPageData('writing', data, operation);
+			if (nextData !== data) {
+				data = nextData;
+				cachePageSnapshot('writing', data);
+			}
+		};
+
+		window.addEventListener('inkly-offline-operation', handleOperation);
+		return () => window.removeEventListener('inkly-offline-operation', handleOperation);
+	});
 </script>
 
 <section class="stack">
@@ -54,7 +83,7 @@
 
 	<section class="card" style="padding: 1.25rem;">
 		<h2 class="display" style="margin-top: 0;">Log progress</h2>
-		<form method="POST" action="?/create" class="stack">
+		<form method="POST" action="?/create" class="stack" data-offline-mutation="writing.create">
 			<div class="field-grid" style="align-items: end;">
 				<label class="span-3"><span class="eyebrow">Date</span><input name="date" type="date" value={data.today} required /></label>
 				<label class="span-4"
@@ -161,7 +190,7 @@
 						{#if editingId === entry.id}
 							<tr>
 								<td colspan="8" style="background: rgba(138, 90, 46, 0.05);">
-									<form id={`writing-update-${entry.id}`} method="POST" action="?/update" class="stack">
+									<form id={`writing-update-${entry.id}`} method="POST" action="?/update" class="stack" data-offline-mutation="writing.update">
 										<input type="hidden" name="id" value={entry.id} />
 										<div class="field-grid" style="align-items: end;">
 											<label class="span-3"
@@ -179,7 +208,7 @@
 											</div>
 										</div>
 									</form>
-									<form id={`writing-delete-${entry.id}`} method="POST" action="?/delete">
+									<form id={`writing-delete-${entry.id}`} method="POST" action="?/delete" data-offline-mutation="writing.delete">
 										<input type="hidden" name="id" value={entry.id} />
 									</form>
 								</td>

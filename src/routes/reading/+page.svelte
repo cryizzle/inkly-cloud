@@ -1,16 +1,24 @@
 <script lang="ts">
+	import { onMount, untrack } from 'svelte';
 	import MetricCard from '$lib/components/MetricCard.svelte';
 	import Pagination from '$lib/components/Pagination.svelte';
 	import ProgressCard from '$lib/components/ProgressCard.svelte';
+	import {
+		applyOperationToPageData,
+		cachePageSnapshot,
+		loadPageSnapshot,
+		type OfflineOperationEvent
+	} from '$lib/client/offline-sync';
 	import type { ReadingStats } from '$lib/types';
 
 	const PAGE_SIZE = 10;
 
 	let {
-		data
+		data: serverData
 	}: {
 		data: { stats: ReadingStats; sort: 'asc' | 'desc'; activePage: number; readPage: number; today: string };
 	} = $props();
+	let data = $state(untrack(() => structuredClone(serverData)));
 	let editingId = $state<number | null>(null);
 	let expandedId = $state<number | null>(null);
 	let showRead = $state(false);
@@ -59,6 +67,27 @@
 		if (status === 'DNF') return 'dnf';
 		return '';
 	}
+
+	onMount(() => {
+		cachePageSnapshot('reading', data);
+		loadPageSnapshot<typeof data>('reading').then((snapshot) => {
+			if (snapshot && !navigator.onLine) {
+				data = snapshot;
+			}
+		});
+
+		const handleOperation = (event: Event) => {
+			const { operation } = (event as CustomEvent<OfflineOperationEvent>).detail;
+			const nextData = applyOperationToPageData('reading', data, operation);
+			if (nextData !== data) {
+				data = nextData;
+				cachePageSnapshot('reading', data);
+			}
+		};
+
+		window.addEventListener('inkly-offline-operation', handleOperation);
+		return () => window.removeEventListener('inkly-offline-operation', handleOperation);
+	});
 </script>
 
 <section class="stack">
@@ -156,7 +185,7 @@
 						{#if editingId === entry.id}
 							<tr>
 								<td colspan="6" style="background: rgba(138, 90, 46, 0.05);">
-									<form id={`reading-update-${entry.id}`} method="POST" action="?/update" class="stack">
+									<form id={`reading-update-${entry.id}`} method="POST" action="?/update" class="stack" data-offline-mutation="reading.update">
 										<input type="hidden" name="id" value={entry.id} />
 										<div class="field-grid">
 											<label class="span-9"><span class="eyebrow">Title</span><input name="title" value={entry.title} /></label>
@@ -171,7 +200,7 @@
 											<label class="span-3"><span class="eyebrow">Disliked</span><textarea name="disliked">{entry.disliked ?? ''}</textarea></label>
 										</div>
 									</form>
-									<form id={`reading-delete-${entry.id}`} method="POST" action="?/delete">
+									<form id={`reading-delete-${entry.id}`} method="POST" action="?/delete" data-offline-mutation="reading.delete">
 										<input type="hidden" name="id" value={entry.id} />
 									</form>
 									<div class="button-row" style="justify-content: flex-end; margin-top: 1rem;">
@@ -274,7 +303,7 @@
 							{#if editingId === entry.id}
 								<tr>
 									<td colspan="6" style="background: rgba(138, 90, 46, 0.05);">
-										<form id={`reading-update-${entry.id}`} method="POST" action="?/update" class="stack">
+										<form id={`reading-update-${entry.id}`} method="POST" action="?/update" class="stack" data-offline-mutation="reading.update">
 											<input type="hidden" name="id" value={entry.id} />
 											<label><span class="eyebrow">Status</span><select name="status"><option value="Want to Read" selected={entry.status === 'Want to Read'}>Want to Read</option><option value="Reading" selected={entry.status === 'Reading'}>Reading</option><option value="Read" selected={entry.status === 'Read'}>Read</option><option value="DNF" selected={entry.status === 'DNF'}>DNF</option></select></label>
 											<label><span class="eyebrow">Verified comp</span><select name="verifiedComp"><option value="false" selected={!entry.verifiedComp}>No</option><option value="true" selected={entry.verifiedComp}>Yes</option></select></label>
@@ -287,7 +316,7 @@
 											<label><span class="eyebrow">Liked</span><textarea name="liked">{entry.liked ?? ''}</textarea></label>
 											<label><span class="eyebrow">Disliked</span><textarea name="disliked">{entry.disliked ?? ''}</textarea></label>
 										</form>
-										<form id={`reading-delete-${entry.id}`} method="POST" action="?/delete">
+										<form id={`reading-delete-${entry.id}`} method="POST" action="?/delete" data-offline-mutation="reading.delete">
 											<input type="hidden" name="id" value={entry.id} />
 										</form>
 										<div class="button-row" style="justify-content: flex-end; margin-top: 1rem;">
@@ -320,7 +349,7 @@
 					<h2 class="display" style="margin: 0;">Add a book</h2>
 					<button class="button subtle" type="button" onclick={() => (showCreateModal = false)}>Close</button>
 				</div>
-				<form method="POST" action="?/create" class="stack">
+				<form method="POST" action="?/create" class="stack" data-offline-mutation="reading.create">
 					<div class="field-grid">
 						<label class="span-9"><span class="eyebrow">Title</span><input name="title" required /></label>
 						<label class="span-3"><span class="eyebrow">Author</span><input name="author" required /></label>

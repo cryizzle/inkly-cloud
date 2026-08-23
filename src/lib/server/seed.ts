@@ -52,6 +52,12 @@ function createTables() {
 			active_writing_cycle_start_date TEXT,
 			active_reading_cycle_start_date TEXT
 		);
+		CREATE TABLE IF NOT EXISTS sync_operations (
+			id TEXT PRIMARY KEY,
+			type TEXT NOT NULL,
+			created_at TEXT NOT NULL,
+			applied_at TEXT NOT NULL
+		);
 	`);
 
 	try {

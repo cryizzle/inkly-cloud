@@ -101,3 +101,22 @@ export interface DashboardSummary {
 		activeMilestones: RewardMilestoneProgress[];
 	};
 }
+
+export type SyncOperationType =
+	| 'writing.create'
+	| 'writing.update'
+	| 'writing.delete'
+	| 'reading.create'
+	| 'reading.update'
+	| 'reading.delete'
+	| 'reward.create'
+	| 'reward.update'
+	| 'reward.delete'
+	| 'reward.toggleManual';
+
+export interface SyncOperation {
+	id: string;
+	type: SyncOperationType;
+	payload: Record<string, string>;
+	createdAt: string;
+}

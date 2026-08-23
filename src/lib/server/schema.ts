@@ -48,3 +48,10 @@ export const appSettings = sqliteTable('app_settings', {
 	activeWritingCycleStartDate: text('active_writing_cycle_start_date'),
 	activeReadingCycleStartDate: text('active_reading_cycle_start_date')
 });
+
+export const syncOperations = sqliteTable('sync_operations', {
+	id: text('id').primaryKey(),
+	type: text('type').notNull(),
+	createdAt: text('created_at').notNull(),
+	appliedAt: text('applied_at').notNull()
+});

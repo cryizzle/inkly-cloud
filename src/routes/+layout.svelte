@@ -1,5 +1,6 @@
 <script lang="ts">
 	import '../app.css';
+	import OfflineSyncStatus from '$lib/components/OfflineSyncStatus.svelte';
 
 	let { children } = $props();
 
@@ -20,6 +21,7 @@
 </svelte:head>
 
 <div class="app-shell">
+	<OfflineSyncStatus />
 	<div class="paper" style="padding: 1.2rem; overflow: hidden;">
 		<header
 			style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 0.8rem 1rem 1.3rem; border-bottom: 1px solid rgba(97, 70, 35, 0.1); flex-wrap: wrap;"

@@ -2,7 +2,14 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { appSettings, readingEntries, rewardCompletions, rewardMilestones, writingEntries } from './schema';
+import {
+	appSettings,
+	readingEntries,
+	rewardCompletions,
+	rewardMilestones,
+	syncOperations,
+	writingEntries
+} from './schema';
 import { getDataRoot } from './runtime-paths';
 
 let sqlite: Database.Database | null = null;
@@ -30,7 +37,8 @@ export function getDb() {
 			rewardCompletions,
 			writingEntries,
 			readingEntries,
-			appSettings
+			appSettings,
+			syncOperations
 		}
 	});
 }
